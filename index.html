@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lectura Nave 5</title>
+<meta name="theme-color" content="#18212b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lectura Nave 5">
+<style>
+:root{--bg:#eef1f3;--panel:#fff;--ink:#18212b;--muted:#5b6875;--line:#d5dbe1;--accent:#d98a00;--accent-ink:#1b1300;
+--ok:#1f7a4d;--okbg:#e3f3ea;--warn:#8a5200;--warnbg:#fff1d6;--bad:#b3261e;--badbg:#fde8e6;
+--mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;--body:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#11161b;--panel:#1a2128;--ink:#e7ecf0;--muted:#97a3ae;--line:#2c3640;--accent:#f2a531;
+--ok:#5cc890;--okbg:#15291f;--warn:#f2b45a;--warnbg:#2e2412;--bad:#ff8a80;--badbg:#3a1a18;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{margin:0;color:var(--ink);font-family:var(--body);font-size:16px;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.wrap{max-width:480px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right)) 28px max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:14px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.code{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+h1{margin:2px 0 0;font-size:26px}
+.net{font-size:12px;font-weight:700;padding:5px 9px;border-radius:999px;background:var(--okbg);color:var(--ok);white-space:nowrap}
+.net.off{background:var(--warnbg);color:var(--warn)}
+.meter{background:var(--ink);color:var(--bg);border-radius:14px;padding:14px 16px}
+.meter .l{font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.7}
+.meter .v{font-family:var(--mono);font-size:34px;font-weight:700;color:var(--accent)}
+.meter .w{font-size:13px;opacity:.8}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px}
+label{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+input{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+#kwh{font-family:var(--mono);font-size:36px;font-weight:700;text-align:center;letter-spacing:.04em}
+.reloj{display:grid;gap:2px;background:var(--bg);border:1px dashed var(--line);border-radius:10px;padding:10px 12px}
+.reloj span{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.reloj b{font-family:var(--mono);font-size:20px}
+.reloj small{font-size:12px;color:var(--muted)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+details summary{cursor:pointer;color:var(--muted);font-weight:600;font-size:14px}
+details .row{margin-top:10px}
+button{font:inherit;font-weight:800;font-size:18px;border:0;border-radius:12px;padding:16px;background:var(--accent);color:var(--accent-ink);cursor:pointer;width:100%}
+button:disabled{opacity:.5}
+.msg{border-radius:10px;padding:11px 12px;font-size:15px}
+.ok{background:var(--okbg);color:var(--ok)}.warn{background:var(--warnbg);color:var(--warn)}.bad{background:var(--badbg);color:var(--bad)}
+.hoy{font-size:14px;color:var(--muted)}
+.hoy b{font-family:var(--mono);color:var(--ink)}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="code">MTO-R007-TXN2 · Lectura de energía</div>
+      <h1>Nave #5</h1>
+    </div>
+    <span class="net" id="net">En línea</span>
+  </header>
+
+  <div class="meter">
+    <div class="l">Última lectura registrada</div>
+    <div class="v" id="ult">—</div>
+    <div class="w" id="ultw">Cargando…</div>
+  </div>
+
+  <form class="card" id="f" autocomplete="off">
+    <label for="kwh">Consumo kWh total del medidor</label>
+    <input id="kwh" inputmode="numeric" placeholder="0000" required>
+    <div class="reloj"><span>Fecha y hora del registro</span><b id="reloj">—</b><small>Se toman solas al tocar Guardar</small></div>
+    <div class="hoy" id="hoy"></div>
+    <details>
+      <summary>Más datos (opcional)</summary>
+      <div class="row">
+        <label>kVArh<input id="kvarh" inputmode="decimal"></label>
+        <label>Agua m³<input id="agua" inputmode="numeric"></label>
+        <label>kW punta noche<input id="kwNoche" inputmode="decimal"></label>
+        <label>kW punta día<input id="kwDia" inputmode="decimal"></label>
+      </div>
+    </details>
+    <label>Nombre<input id="nombre" autocomplete="name"></label>
+    <div id="msg" hidden></div>
+    <button id="btn" type="submit">Guardar lectura</button>
+    <div class="hoy" id="pend" hidden></div>
+  </form>
+</div>
+
+<script>
+/* ======== CONFIGURACIÓN: pegá aquí la URL /exec de tu Apps Script ======== */
+let API_URL = 'PEGAR_AQUI_LA_URL_QUE_TERMINA_EN_/exec';   // o se configura con el enlace ?api=...
+const CLAVE   = 'nave5-energia';   // igual que CLAVE_APP en Codigo.gs
+/* ======================================================================== */
+
+const $ = id => document.getElementById(id);
+const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+let confirmar = false, ultima = null;
+const ls = { get: (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+             set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+$('nombre').value = ls.get('nombre', '');
+// Configuración por enlace: .../?api=URL_DEL_SERVIDOR (se guarda en el teléfono)
+(() => {
+  const q = new URLSearchParams(location.search).get('api');
+  if (q && /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/.test(q)) { ls.set('api', q); history.replaceState(null, '', location.pathname); }
+  if (API_URL.indexOf('PEGAR') === 0 && ls.get('api', '')) API_URL = ls.get('api', '');
+})();
+
+function msg(cls, txt) { const m = $('msg'); m.className = 'msg ' + cls; m.textContent = txt; m.hidden = false; }
+const f = iso => { const p = iso.split('-'); return p[2] + '/' + p[1]; };
+const p2 = n => String(n).padStart(2, '0');
+function tic() {
+  const d = new Date(); let h = d.getHours(); const ap = h < 12 ? 'a.m.' : 'p.m.'; h = h % 12 || 12;
+  $('reloj').textContent = DIAS[d.getDay()] + ' ' + p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + d.getFullYear() + ' · ' + h + ':' + p2(d.getMinutes()) + ' ' + ap;
+}
+tic(); setInterval(tic, 1000);
+
+function red() { const on = navigator.onLine; $('net').textContent = on ? 'En línea' : 'Sin señal'; $('net').className = 'net' + (on ? '' : ' off'); }
+addEventListener('online', () => { red(); enviarPendientes(); cargar(); });
+addEventListener('offline', red); red();
+
+async function api(cuerpo) {
+  const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(Object.assign({ clave: CLAVE }, cuerpo)) });
+  const j = await r.json();
+  if (j.error) throw Object.assign(new Error(j.error), { servidor: true });
+  return j;
+}
+
+async function cargar() {
+  if (API_URL.indexOf('PEGAR') === 0) { $('ultw').textContent = 'App sin configurar: abrila con el enlace que te mandó el administrador.'; return; }
+  try {
+    const s = await api({ accion: 'estado' });
+    ultima = s.ultima; ls.set('ultima', ultima);
+    pintarUltima();
+    $('hoy').innerHTML = s.hoy.length ? 'Hoy: ' + s.hoy.map(r => r.hora + ' → <b>' + r.kwh + '</b>').join(' · ') : 'Hoy no hay lecturas todavía.';
+  } catch (e) { ultima = ultima || ls.get('ultima', null); pintarUltima(); if (!ultima) $('ultw').textContent = 'Sin conexión'; }
+}
+function pintarUltima() {
+  if (ultima) { $('ult').textContent = ultima.kwh + ' kWh'; $('ultw').textContent = f(ultima.fecha) + ' · ' + ultima.hora; }
+}
+
+/* Lecturas guardadas en el teléfono cuando no hay señal */
+function pintarPend() { const p = ls.get('pendientes', []); $('pend').hidden = !p.length; $('pend').textContent = p.length + ' lectura(s) guardadas en el teléfono, se envían solas al tener señal.'; }
+let enviando = false;
+async function enviarPendientes() {
+  if (enviando) return; enviando = true;
+  try {
+    let p = ls.get('pendientes', []);
+    while (p.length) {
+      try { await api({ accion: 'guardar', datos: Object.assign({}, p[0], { confirmado: true }) }); }
+      catch (e) { if (!e.servidor) break; }       // sin red: se intenta después
+      p.shift(); ls.set('pendientes', p);
+    }
+  } finally { enviando = false; pintarPend(); }
+}
+setInterval(enviarPendientes, 60000);
+
+$('kwh').addEventListener('input', () => { confirmar = false; $('msg').hidden = true; });
+
+$('f').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const kwh = $('kwh').value.replace(/[^\d.,]/g, '');
+  if (!kwh) { msg('bad', 'Escribí la lectura del medidor.'); $('kwh').focus(); return; }
+  const n = parseFloat(kwh.replace(',', '.'));
+  if (!confirmar && ultima && n < ultima.kwh) {
+    confirmar = true;
+    msg('warn', 'La lectura es menor que la anterior (' + ultima.kwh + ' kWh, ' + f(ultima.fecha) + ' ' + ultima.hora + '). El medidor no retrocede: revisá el número. Si está bien, tocá Guardar otra vez.');
+    return;
+  }
+  const d = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), ts: Date.now(), kwh: kwh,
+              kvarh: $('kvarh').value, agua: $('agua').value, kwNoche: $('kwNoche').value, kwDia: $('kwDia').value,
+              nombre: $('nombre').value.trim(), confirmado: confirmar };
+  ls.set('nombre', d.nombre);
+  const limpiar = () => { confirmar = false; ['kwh', 'kvarh', 'agua', 'kwNoche', 'kwDia'].forEach(id => $(id).value = ''); };
+  const t = new Date(d.ts), hora = p2(t.getHours()) + ':' + p2(t.getMinutes());
+  $('btn').disabled = true; $('btn').textContent = 'Guardando…';
+  try {
+    const r = await api({ accion: 'guardar', datos: d });
+    if (r.aviso) { confirmar = true; msg('warn', 'La lectura es menor que la anterior (' + r.anterior.kwh + ' kWh). Revisá el número; si está bien, tocá Guardar otra vez.'); return; }
+    limpiar(); msg('ok', '✓ Guardada: ' + r.kwh + ' kWh · ' + f(r.fecha) + ' ' + r.hora);
+    cargar();
+  } catch (e) {
+    if (e.servidor) { msg('bad', 'No se guardó: ' + e.message); return; }
+    const p = ls.get('pendientes', []); d.confirmado = true; p.push(d); ls.set('pendientes', p);
+    ultima = { kwh: n, fecha: t.getFullYear() + '-' + p2(t.getMonth() + 1) + '-' + p2(t.getDate()), hora: hora }; pintarUltima();
+    limpiar(); msg('warn', 'Sin señal: la lectura ' + kwh + ' kWh (' + hora + ') quedó guardada en el teléfono y se envía sola al volver la señal.');
+    pintarPend();
+  } finally { $('btn').disabled = false; $('btn').textContent = 'Guardar lectura'; }
+});
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+pintarPend(); ultima = ls.get('ultima', null); pintarUltima(); cargar(); enviarPendientes();
+</script>
+</body>
+</html>
